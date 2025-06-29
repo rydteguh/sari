@@ -164,6 +164,14 @@ services:
       KAFKA_BROKERS: "kafka:9092"
       SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       CDK_IN_CONF_FILE: /opt/conduktor/console-config.yaml
+  
+  clickhouse:
+    image: clickhouse/clickhouse-server
+    platform: linux/amd64
+    container_name: clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
 
 volumes:
   postgres_data:
