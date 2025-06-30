@@ -1,0 +1,5 @@
+apache-airflow==2.9.3
+clickhouse-connect>=0.5.7
+pandas
+avro
+confluent_kafka

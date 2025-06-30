@@ -108,7 +108,7 @@ services:
       --server-id=223344
       --enforce-gtid-consistency=ON
     volumes:
-      - ./scripts/first_migration.sql:/docker-entrypoint-initdb.d/first_migration.sql  # Mount the SQL file directly
+      - ./mysql-script/first_migration.sql:/docker-entrypoint-initdb.d/first_migration.sql  # Mount the SQL file directly
 
 
 
@@ -131,11 +131,11 @@ services:
     platform: linux/amd64
     container_name: postgres
     environment:
-      POSTGRES_USER: conduktor
-      POSTGRES_PASSWORD: conduktor
-      POSTGRES_DB: conduktor
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U conduktor -d conduktor"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -143,6 +143,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./postgres-script/postgres-init.sql:/docker-entrypoint-initdb.d/postgres-init.sql
 
 
   conduktor-platform:
@@ -159,19 +160,89 @@ services:
     ports:
       - "8087:8080"
     volumes:
-      - "./scripts/conduktor-config.yaml:/opt/conduktor/console-config.yaml"
+      - "./conduktor-script/conduktor-config.yaml:/opt/conduktor/console-config.yaml"
     environment:
       KAFKA_BROKERS: "kafka:9092"
       SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       CDK_IN_CONF_FILE: /opt/conduktor/console-config.yaml
   
   clickhouse:
-    image: clickhouse/clickhouse-server
+    image: clickhouse/clickhouse-server:latest
     platform: linux/amd64
     container_name: clickhouse
+    environment:
+      - CLICKHOUSE_DB=demo_tables
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=clickhouse
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    volumes:
+      - ./clickhouse-script/sql:/docker-entrypoint-initdb.d
     ports:
       - "8123:8123"
       - "9000:9000"
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+
+  airflow:
+    build: ./airflow
+    image: airflow-build:latest
+    container_name: airflow
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CORE__FERNET_KEY=epGmHWw_9SlqNonog5xDBp6IgClxfYqxvTKJyvavGO0=
+      - AIRFLOW__WEBSERVER__SECRET_KEY=60a5152d8af7197efa6c821348cf948d67cde9c880375c3b774c48549c739dda
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+    ports:
+      - "8080:8080"
+    command: bash -c "airflow db init && airflow users create --username admin --firstname admin --lastname admin --role Admin --email admin@example.com --password admin && airflow webserver"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      clickhouse:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  airflow-scheduler:
+    build: ./airflow
+    image: airflow-build:latest
+    container_name: airflow-scheduler
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CORE__FERNET_KEY=epGmHWw_9SlqNonog5xDBp6IgClxfYqxvTKJyvavGO0=
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+    command: scheduler
+    depends_on:
+      - airflow
+      - postgres
+      - clickhouse
 
 volumes:
   postgres_data:
+  clickhouse_data:
+  clickhouse_logs:
