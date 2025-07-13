@@ -16,7 +16,7 @@ The project simulates a real-world scenario involving:
 - Streaming system: Debezzium + Kafka + Schema Registry
 - ETL system: Clickhouse
 
-![Scenario 1 Diagram](lib/scenario1.png)
+![Scenario 1 Diagram](img/scenario1.png)
 
 ### Scenario 2
 
@@ -24,7 +24,7 @@ The project simulates a real-world scenario involving:
 - Transfromation system: Clickhouse
 - Scheduler: Airflow
 
-![Scenario 2 Diagram](lib/scenario2.png)
+![Scenario 2 Diagram](img/scenario2.png)
 
 ### Scenario 3
 
@@ -32,4 +32,4 @@ The project simulates a real-world scenario involving:
 - Streaming system: Debezzium + Kafka + Schema Registry
 - Transfromation system: Apache Flink
 
-![Scenario 2 Diagram](lib/scenario3.png)
+![Scenario 2 Diagram](img/scenario3.png)
