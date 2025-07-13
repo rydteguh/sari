@@ -1,0 +1,6 @@
+pyflink
+clickhouse-connect>=0.5.7
+confluent_kafka
+avro
+pandas
+apache-flink

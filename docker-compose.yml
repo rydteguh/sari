@@ -241,6 +241,32 @@ services:
       - airflow
       - postgres
       - clickhouse
+  
+  flink:
+    build: ./flink
+    image: flink-build:latest
+    depends_on:
+      - kafka
+      - clickhouse 
+    platform: linux/amd64
+    container_name: flink
+    ports:
+      - "8082:8082"   # Web UI
+      - "6123:6123"   # JobManager RPC
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink
+        taskmanager.numberOfTaskSlots: 2
+        web.upload.dir: /opt/flink/conf
+        web.tmpdir: /opt/flink/conf
+        high-availability.storageDir: file:///opt/flink/conf
+        state.checkpoints.dir: file:///opt/flink/conf/checkpoints
+        state.savepoints.dir: file:///opt/flink/conf/savepoints
+    volumes:
+      - ./path/to/flink-connector-kafka_2.12-1.16.0.jar:/opt/flink/lib/flink-connector-kafka_2.12-1.16.0.jar
+    
+    # command: jobmanager
 
 volumes:
   postgres_data:
