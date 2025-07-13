@@ -264,7 +264,7 @@ services:
         state.checkpoints.dir: file:///opt/flink/conf/checkpoints
         state.savepoints.dir: file:///opt/flink/conf/savepoints
     volumes:
-      - ./path/to/flink-connector-kafka_2.12-1.16.0.jar:/opt/flink/lib/flink-connector-kafka_2.12-1.16.0.jar
+      - ./flink/lib/flink-connector-kafka_2.12-1.16.0.jar:/opt/flink/lib/flink-connector-kafka_2.12-1.16.0.jar
     
     # command: jobmanager
 
